@@ -14,7 +14,8 @@ import pytest
 from custom_components.tapo.coordinators import TapoDataCoordinator
 from custom_components.tapo.hub.event import (
     EVENT_DOUBLE_CLICK,
-    EVENT_ROTATION,
+    EVENT_ROTATE_ANTICLOCKWISE,
+    EVENT_ROTATE_CLOCKWISE,
     EVENT_SINGLE_CLICK,
     AdaptivePollingState,
     HubEventLogPoller,
@@ -283,18 +284,34 @@ class TestTapoDialEvent:
         assert self.entity._attr_name == "Dial Event"
 
     def test_event_types(self):
-        assert self.entity._attr_event_types == [EVENT_ROTATION]
+        assert self.entity._attr_event_types == [
+            EVENT_ROTATE_CLOCKWISE,
+            EVENT_ROTATE_ANTICLOCKWISE,
+        ]
 
-    def test_handle_rotation_event(self):
+    def _rotate(self, degrees: int) -> None:
         self.entity._trigger_event = MagicMock()
         self.entity.async_write_ha_state = MagicMock()
         event = MagicMock(spec=RotationEvent)
         event.__class__ = RotationEvent
-        event.degrees = 45
+        event.degrees = degrees
         self.entity._handle_event(event)
+
+    def test_handle_clockwise_rotation(self):
+        self._rotate(45)
         self.entity._trigger_event.assert_called_once_with(
-            EVENT_ROTATION, {"degrees": 45}
+            EVENT_ROTATE_CLOCKWISE, {"degrees": 45}
         )
+
+    def test_handle_anticlockwise_rotation(self):
+        self._rotate(-30)
+        self.entity._trigger_event.assert_called_once_with(
+            EVENT_ROTATE_ANTICLOCKWISE, {"degrees": -30}
+        )
+
+    def test_ignores_zero_rotation(self):
+        self._rotate(0)
+        self.entity._trigger_event.assert_not_called()
 
     def test_ignores_single_click_event(self):
         self.entity._trigger_event = MagicMock()

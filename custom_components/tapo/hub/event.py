@@ -243,7 +243,8 @@ def get_hub_event_log_poller(
 
 EVENT_SINGLE_CLICK = "single_click"
 EVENT_DOUBLE_CLICK = "double_click"
-EVENT_ROTATION = "rotation"
+EVENT_ROTATE_CLOCKWISE = "rotate_clockwise"
+EVENT_ROTATE_ANTICLOCKWISE = "rotate_anticlockwise"
 
 
 async def async_setup_entry(
@@ -392,13 +393,19 @@ class TapoDialEvent(_TapoEventBase):
     """Event entity for S200B/S200D dial rotation."""
 
     _attr_name = "Dial Event"
-    _attr_event_types = [EVENT_ROTATION]
+    _attr_event_types = [EVENT_ROTATE_CLOCKWISE, EVENT_ROTATE_ANTICLOCKWISE]
 
     @property
     def unique_id(self):
         return super().unique_id + "_dial_event"
 
     def _handle_event(self, event: S200BEvent) -> None:
-        if isinstance(event, RotationEvent):
-            self._trigger_event(EVENT_ROTATION, {"degrees": event.degrees})
+        # positive degrees are clockwise (verified on S200B behind an H200)
+        if isinstance(event, RotationEvent) and event.degrees:
+            event_type = (
+                EVENT_ROTATE_CLOCKWISE
+                if event.degrees > 0
+                else EVENT_ROTATE_ANTICLOCKWISE
+            )
+            self._trigger_event(event_type, {"degrees": event.degrees})
             self.async_write_ha_state()

@@ -235,7 +235,7 @@ async def test_h200_button_actions_fire_events(
     fake_protocol.push_event("rotation", rotate_deg=-15)
     await _poll()
     dial = hass.states.get("event.desk_button_dial_event")
-    assert dial.attributes["event_type"] == "rotation"
+    assert dial.attributes["event_type"] == "rotate_anticlockwise"
     assert dial.attributes["degrees"] == -15
 
     fake_protocol.push_event("singleClick")
