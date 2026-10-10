@@ -80,7 +80,8 @@ Please be sure to have DHCP discovery enabled on your `configuration.yaml` (enab
 
 - [x] pure async home assistant's method
 - [x] support for tapo `H100` hub and siren
-- [ ] support for tapo `H200` hub is currently Work In Progress!
+- [x] support for tapo `H200` hub and its smart sensors (`S200B`, `S200D`, `T110`, `T31x`, ...). Cameras paired to the hub are not exposed. The hub only speaks HTTPS, so the connection is made through [python-kasa](https://github.com/python-kasa/python-kasa).
+  The H200 does not keep `S200B`/`S200D` button presses locally, so for these buttons the click and rotation events are read from the Tapo cloud Event Log (unofficial API, same Tapo account, about 1-3 seconds of delay, needs internet). The H200 reports a double press as two single clicks, so two clicks at most 1 second apart are reported as a double click. All other hub data stays local.
 - [x] support for `T31x` temperature and humidity sensor hub's device
 - [x] support for `T100` motion sensor hub's device
 - [x] support for `T110` smart door hub's device

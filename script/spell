@@ -35,7 +35,7 @@ fi
 log_header "Running codespell with auto-fix"
 codespell \
     --write-changes \
-    --ignore-words-list=aiport,astroid,checkin,currenty,hass,iif,incomfort,lookin,nam,NotIn \
+    --ignore-words-list=aiport,astroid,checkin,currenty,doubleclick,hass,iif,incomfort,lookin,nam,NotIn \
     --skip="./.*,*.csv,*.json,*.ambr,uv.lock" \
     --quiet-level=2 \
     custom_components/ \

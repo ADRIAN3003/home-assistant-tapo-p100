@@ -33,6 +33,10 @@ from custom_components.tapo.const import (
 )
 from custom_components.tapo.discovery import discover_tapo_device
 from custom_components.tapo.errors import CannotConnect, InvalidAuth, InvalidHost
+from custom_components.tapo.hub.smartcam_bridge import (
+    connect_smartcam_hub,
+    is_smartcam_hub,
+)
 from custom_components.tapo.setup_helpers import create_aiohttp_session, get_host_port
 
 _LOGGER = logging.getLogger(__name__)
@@ -187,7 +191,12 @@ class TapoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(
                 title=self.first_step_data.device.nickname,
                 data=self.first_step_data.user_input
-                | {CONF_SCAN_INTERVAL: polling_rate},
+                | {
+                    CONF_SCAN_INTERVAL: polling_rate,
+                    CONF_DISCOVERED_DEVICE_INFO: self._discovered_info.as_dict
+                    if self._discovered_info is not None
+                    else None,
+                },
             )
         else:
             return self.async_show_form(
@@ -315,7 +324,19 @@ class TapoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     host=host,
                     port=port,
                 )
-                device = await connect(config=config, session=session)
+                try:
+                    device = await connect(config=config, session=session)
+                except Exception:
+                    # hubs like the H200 only speak HTTPS, ask the device what it is
+                    discovered_device = await discover_tapo_device(host)
+                    if not is_smartcam_hub(discovered_device):
+                        raise
+                    self._discovered_info = discovered_device
+                    device = await connect_smartcam_hub(host, credential, session)
+            elif is_smartcam_hub(discovered_device):
+                device = await connect_smartcam_hub(
+                    discovered_device.ip, credential, session
+                )
             else:
                 device = await connect_discovered_device(
                     discovered_device, credential, session

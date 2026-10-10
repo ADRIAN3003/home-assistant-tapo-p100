@@ -19,6 +19,10 @@ from custom_components.tapo.const import (
 )
 from custom_components.tapo.coordinators import HassTapoDeviceData, TapoDataCoordinator
 from custom_components.tapo.hub.hass_tapo_hub import HassTapoHub, TapoHub
+from custom_components.tapo.hub.smartcam_bridge import (
+    connect_smartcam_hub,
+    is_smartcam_hub,
+)
 from custom_components.tapo.setup_helpers import create_aiohttp_session
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,11 +38,17 @@ class HassTapo:
         if discover_data := self.entry.data.get(CONF_DISCOVERED_DEVICE_INFO):
             _LOGGER.info("Found discovered data, avoid to guess protocol")
             discovered_device = DiscoveredDevice.from_dict(discover_data)
-            device = await connect_discovered_device(
-                discovered_device=discovered_device,
-                credentials=self.config.credentials,
-                session=session,
-            )
+            if is_smartcam_hub(discovered_device):
+                device = await connect_smartcam_hub(
+                    self.config.host, self.config.credentials, session
+                )
+                self.entry.async_on_unload(device.client.close)
+            else:
+                device = await connect_discovered_device(
+                    discovered_device=discovered_device,
+                    credentials=self.config.credentials,
+                    session=session,
+                )
         else:
             device = await connect(config=self.config, session=session)
 
